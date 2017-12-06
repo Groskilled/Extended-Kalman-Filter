@@ -28,6 +28,11 @@ void KalmanFilter::Predict()
 	P_ = F_ * P_ * F_.transpose() + Q_;
 }
 
+void NormalizeAngle(double& phi)
+{
+  phi = atan2(sin(phi), cos(phi));
+}
+
 void KalmanFilter::Update(const VectorXd &z)
 {
 	VectorXd z_pred = H_ * x_;
@@ -41,7 +46,7 @@ void KalmanFilter::Update(const VectorXd &z)
 	x_ = x_ + (K * y);
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
-	P_ = (I - K * H_) * P_;
+	P_ -= K * H_ * P_;
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z)
@@ -55,6 +60,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z)
 	VectorXd z_pred(3);
 	z_pred << rho, phi, rho_dot;
 	VectorXd y = z - z_pred;
+	NormalizeAngle(y(1));
 	MatrixXd Ht = H_.transpose();
 	MatrixXd S = H_ * P_ * Ht + R_;
 	MatrixXd Si = S.inverse();
@@ -64,5 +70,5 @@ void KalmanFilter::UpdateEKF(const VectorXd &z)
 	x_ = x_ + (K * y);
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
-	P_ = (I - K * H_) * P_;
+	P_ -= K * H_ * P_;
 }
